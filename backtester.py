@@ -1,4 +1,5 @@
 import pandas as pd
+import matplotlib.pyplot as plt
 from strategies.markov_strategy import BaseStrategy
 
 class Backtester:
