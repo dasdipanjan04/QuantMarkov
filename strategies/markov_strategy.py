@@ -1,6 +1,10 @@
 import pandas as pd
 from base_strategy import BaseStrategy
 
+class BaseStrategy:
+    def generate_signals(self, data: pd.DataFrame) -> pd.Series:
+        raise NotImplementedError("Must implement generate_signals method")
+
 class MarkovStrategy(BaseStrategy):
     def __init__(self, markov_model, state_series: pd.Series):
         self.model = markov_model
