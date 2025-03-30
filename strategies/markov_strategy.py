@@ -1,5 +1,4 @@
 import pandas as pd
-from base_strategy import BaseStrategy
 
 class BaseStrategy:
     def generate_signals(self, data: pd.DataFrame) -> pd.Series:
