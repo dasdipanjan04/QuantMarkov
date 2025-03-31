@@ -2,10 +2,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from strategies.base_strategy import BaseStrategy
 
-class BaseStrategy:
-    def generate_signals(self, data: pd.DataFrame) -> pd.Series:
-        raise NotImplementedError("Must implement generate_signals method")
 class OrderNMarkovModel:
     def __init__(self, order=2, num_states=3):
         self.order = order

@@ -11,12 +11,16 @@ class Backtester:
         self.results = None
 
     def run(self):
+        close = self.data['close']
+        if isinstance(close, pd.DataFrame):
+            close = close.iloc[:, 0]  # use first column if multiple
+
         signals = self.strategy.generate_signals(self.data)
         positions = signals.replace(-1, 0).cumsum()
         portfolio = pd.DataFrame(index=self.data.index)
         portfolio['positions'] = positions
-        portfolio['holdings'] = self.data['close'] * portfolio['positions']
-        portfolio['cash'] = self.initial_capital - (signals * self.data['close']).cumsum()
+        portfolio['holdings'] = close * portfolio['positions']
+        portfolio['cash'] = self.initial_capital - (signals * close).cumsum()
         portfolio['total'] = portfolio['cash'] + portfolio['holdings']
         portfolio['returns'] = portfolio['total'].pct_change().fillna(0)
         self.results = portfolio

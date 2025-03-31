@@ -2,41 +2,42 @@ from utils.state_encoder import encode_states
 from strategies.markov_strategy import MarkovStrategy, OrderNMarkovModel
 from backtester import Backtester, compute_metrics
 from data_loader.data_loader import DataLoader
+from strategies.kalman_strategy import KalmanTrendStrategy
+from strategies.fourier_strategy import FourierCycleStrategy
+from strategies.q_learning_strategy import QLearningStrategy
+from strategies.meta_strategy import MetaStrategy
+from models.kalman_filter import KalmanFilter
+from models.fourier_filter import FourierFilter
 
-# Load data
-data = DataLoader.fetch_yahoo("AAPL", start="2023-01-01", end="2023-12-31")
+data = DataLoader.fetch_yahoo("AAPL", start="2023-01-01", end="2023-01-31")
 
-# Encode price into discrete states
-state_series = encode_states(data)
 
-# Initialize Order-N Markov Model
-markov_model = OrderNMarkovModel(order=2, num_states=3)
+kf = KalmanFilter()
+ff = FourierFilter(keep_ratio=0.03)
+data['kalman'] = kf.apply(data['close'])
+data['fourier'] = ff.apply(data['close'].squeeze())
 
-# Initialize Strategy
-strategy = MarkovStrategy(
-    markov_model=markov_model,
-    state_series=state_series,
-    data=data,
-    prob_threshold=0.6,
-    capital=10000
-)
 
-# Run Backtest
-backtester = Backtester(data, strategy)
+# Create individual strategies
+kalman_strat = KalmanTrendStrategy(data)
+fourier_strat = FourierCycleStrategy(data)
+q_strat = QLearningStrategy(data)
+q_strat.train(episodes=50)
+
+# Combine with meta-strategy
+meta = MetaStrategy(strategies=[kalman_strat, fourier_strat, q_strat], weights=[0.3, 0.3, 0.4])
+
+# Backtest
+backtester = Backtester(data, meta)
 portfolio = backtester.run()
 backtester.plot()
 
-# Compute Metrics
 metrics = compute_metrics(portfolio)
-print("\n📊 Performance Metrics:")
-for key, value in metrics.items():
-    print(f"{key}: {value:.2%}")
+print("\n📊 MetaStrategy Performance:")
+for k, v in metrics.items():
+    print(f"{k}: {v:.2%}")
 
-# Get generated signals
-signals = strategy.generate_signals(data)
+# Reuse the final strategy used in backtester
+signals = meta.generate_signals(data)
+meta.plot_signals(signals, data)
 
-# Plot Heatmap of transition probabilities
-markov_model.plot_transition_heatmap()
-
-# Plot signals on price
-strategy.plot_signals(signals)
